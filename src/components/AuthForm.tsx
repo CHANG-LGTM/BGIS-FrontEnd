@@ -3,9 +3,11 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import type { SignupRequest, SigninRequest } from '../types';
 
+// 유효성 검사 함수
 const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 const validateSignupPassword = (password: string) =>
   /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!%*#?&])[A-Za-z\d!@%*#?&]{8,}$/.test(password);
+
 interface AuthFormProps {
   type: 'signup' | 'signin';
   onSubmit?: (data: SignupRequest | SigninRequest) => Promise<void>;
@@ -15,6 +17,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
   const initialFormData = type === 'signin'
     ? { username: '', password: '' }
     : { username: '', password: '', name: '', confirmPassword: '' };
+
   const [formData, setFormData] = useState<SignupRequest | SigninRequest>(initialFormData);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -22,20 +25,29 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
 
   const validateForm = (): boolean => {
     const errors: { [key: string]: string } = {};
+
     if (!formData.username || !validateEmail(formData.username)) {
       errors.username = '유효한 이메일 형식이어야 합니다.';
     }
+
+    if (!formData.password || !validateSignupPassword(formData.password)) {
+      errors.password = '8자 이상, 숫자, 영문자, 특수문자 중 1개 이상 필요합니다.';
+    }
+
     if (type === 'signup') {
-      if (!formData.password || !validateSignupPassword(formData.password)) {
-        errors.password = '8자 이상, 숫자, 영문자, 특수문자 중 1개 이상 필요합니다.';
-      }
-      if ('confirmPassword' in formData && formData.password !== formData.confirmPassword) {
-        errors.confirmPassword = '비밀번호가 일치하지 않습니다.';
-      }
-      if ('name' in formData && !formData.name.trim()) {
+      const signupData = formData as SignupRequest;
+
+      if (!signupData.name.trim()) {
         errors.name = '사용자 이름을 입력하세요.';
       }
+
+      if (!signupData.confirmPassword) {
+        errors.confirmPassword = '비밀번호 확인을 입력하세요.';
+      } else if (signupData.password !== signupData.confirmPassword) {
+        errors.confirmPassword = '비밀번호가 일치하지 않습니다.';
+      }
     }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -47,51 +59,26 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
     setError(null);
     setLoading(true);
 
-    let data;
-    if (type === 'signin') {
-      data = { username: formData.username, password: formData.password };
-    } else {
-      data = {
-        username: formData.username,
-        password: formData.password,
-        name: (formData as SignupRequest).name,
-        confirmPassword: (formData as SignupRequest).confirmPassword,
-      };
-    }
-
-    try {
-      const endpoint = type === 'signin' ? '/auth/signin' : '/auth/signup';
-      console.log('Sending to:', endpoint);
-      console.log('Payload:', data);
-
-      const response = await axios.post(endpoint, data, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // withCredentials: true, ← ⚠️ 삭제
-      });
-
-      console.log(`${type} successful:`, response.data);
-      if (onSubmit) await onSubmit(formData);
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error('Axios Error:', {
-          status: error.response?.status,
-          message: error.message,
-          data: error.response?.data,
-        });
-        setError(
-          error.response?.data?.message ||
-          error.response?.data?.error ||
-          `API 요청 실패: ${error.message}`
-        );
-      } else {
-        console.error('Unknown Error:', error);
-        setError('알 수 없는 오류가 발생했습니다.');
+    if (onSubmit) {
+      console.log('Calling onSubmit with data:', formData);
+      try {
+        await onSubmit(formData);
+        console.log('onSubmit completed');
+      } catch (error) {
+        console.error('onSubmit Error:', error);
+        if (axios.isAxiosError(error)) {
+          setError(
+            error.response?.data?.message ||
+            error.response?.data?.error ||
+            `API 요청 실패: ${error.message}`
+          );
+        } else {
+          setError('알 수 없는 오류가 발생했습니다.');
+        }
       }
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
   };
 
   return (
@@ -113,20 +100,18 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
       </div>
 
       {type === 'signup' && (
-        <>
-          <div className="mb-4">
-            <label className="block text-sm font-medium">이름</label>
-            <input
-              type="text"
-              value={(formData as SignupRequest).name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className={`w-full p-2 border rounded ${formErrors.name ? 'border-red-500' : ''}`}
-              required
-              disabled={loading}
-            />
-            {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
-          </div>
-        </>
+        <div className="mb-4">
+          <label className="block text-sm font-medium">이름</label>
+          <input
+            type="text"
+            value={(formData as SignupRequest).name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            className={`w-full p-2 border rounded ${formErrors.name ? 'border-red-500' : ''}`}
+            required
+            disabled={loading}
+          />
+          {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
+        </div>
       )}
 
       <div className="mb-4">
@@ -160,9 +145,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
       <button
         type="submit"
         className={`w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 ${
-          loading || Object.keys(formErrors).length > 0 ? 'opacity-50 cursor-not-allowed' : ''
+          loading ? 'opacity-50 cursor-not-allowed' : ''
         }`}
-        disabled={loading || Object.keys(formErrors).length > 0}
+        disabled={loading}
       >
         {loading ? '처리 중...' : type === 'signup' ? '가입' : '로그인'}
       </button>
@@ -170,11 +155,17 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
       <div className="mt-4 text-center">
         {type === 'signin' ? (
           <p className="text-sm">
-            계정이 없으신가요? <Link to="/signup" className="text-blue-500 hover:underline">회원가입</Link>
+            계정이 없으신가요?{' '}
+            <Link to="/signup" className="text-blue-500 hover:underline">
+              회원가입
+            </Link>
           </p>
         ) : (
           <p className="text-sm">
-            이미 계정이 있으신가요? <Link to="/" className="text-blue-500 hover:underline">로그인</Link>
+            이미 계정이 있으신가요?{' '}
+            <Link to="/" className="text-blue-500 hover:underline">
+              로그인
+            </Link>
           </p>
         )}
       </div>

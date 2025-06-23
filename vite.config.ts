@@ -8,9 +8,8 @@ export default defineConfig({
       '/auth': {
         target: 'https://front-mission.bigs.or.kr',
         changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/auth/, '/auth'),
         secure:false,
-        ws:true,
-        
       },
     },
   },

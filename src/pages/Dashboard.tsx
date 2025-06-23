@@ -1,18 +1,26 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getCategories } from '../api';
+import { getBoards } from '../api';
 import BoardList from '../components/BoardList';
-import type { CategoryResponse, User } from '../types';
+import type { BoardListResponse, User } from '../types';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
   const [page, setPage] = useState(0);
   const size = 10;
   const navigate = useNavigate();
-  const user: User | null = JSON.parse(localStorage.getItem('user') || 'null');
-  const { isLoading } = useQuery<CategoryResponse>({
-    queryKey: ['categories'],
-    queryFn: getCategories,
+  const rawUserData = localStorage.getItem('user');
+  console.log('Raw localStorage user:', rawUserData);
+  const user: User | null = rawUserData
+    ? JSON.parse(rawUserData, (key, value) =>
+        typeof value === 'string' ? decodeURIComponent(escape(value)) : value
+      )
+    : null;
+  console.log('Parsed user with decode:', user);
+
+  const { data: boardsData, isLoading } = useQuery<BoardListResponse>({
+    queryKey: ['boards', page, size],
+    queryFn: () => getBoards(page, size),
   });
 
   if (!user) {
@@ -25,7 +33,9 @@ const Dashboard: React.FC = () => {
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h2 className="text-xl font-bold">환영합니다, {user.name}님!</h2>
+            <h2 className="text-xl font-bold" style={{ fontFamily: 'Noto Sans KR, sans-serif' }}>
+              환영합니다, {user?.name || user?.username.split('@')[0] || '사용자'}님!
+            </h2>
             <p className="text-sm text-gray-600">이메일: {user.username}</p>
           </div>
           <div className="flex gap-2">
@@ -47,9 +57,9 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
         {isLoading ? (
-          <div className="text-center">카테고리 로딩 중...</div>
+          <div className="text-center">게시물 로딩 중...</div>
         ) : (
-          <BoardList page={page} size={size} setPage={setPage} />
+          <BoardList page={page} size={size} setPage={setPage} boards={boardsData?.content || []} />
         )}
       </div>
     </div>
