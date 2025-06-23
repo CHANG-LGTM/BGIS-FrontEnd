@@ -1,14 +1,30 @@
 import React from 'react';
-import './index.css';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Signup from './pages/Signup';
+import Signin from './pages/Signin';
+import Dashboard from './pages/Dashboard';
+import BoardCreate from './pages/BoardCreate';
+import BoardEdit from './pages/BoardEdit';
+import BoardView from './pages/BoardView';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const queryClient = new QueryClient();
 
 const App: React.FC = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="p-6 bg-blue-500 text-white rounded-lg shadow-md md:bg-green-500">
-        <h1 className="text-2xl font-bold">Tailwind CSS 테스트</h1>
-        <p className="mt-2">화면 크기를 조정하여 배경색 변화를 확인하세요.</p>
-      </div>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <Routes>
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/signin" element={<Signin />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/boards/create" element={<BoardCreate />} />
+          <Route path="/boards/edit/:id" element={<BoardEdit />} />
+          <Route path="/boards/:id" element={<BoardView />} />
+          <Route path="/" element={<Signin />} />
+        </Routes>
+      </Router>
+    </QueryClientProvider>
   );
 };
 
