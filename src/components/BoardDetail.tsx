@@ -4,9 +4,12 @@ import { deleteBoard, getBoard } from '../api';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import type { BoardDetail } from '../types';
 
-const BoardDetailPage: React.FC = () => {
+const BoardDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
+  const rawUserData = localStorage.getItem('user');
+  const user = rawUserData ? JSON.parse(rawUserData) : null;
 
   const { data: board, isLoading, error } = useQuery<BoardDetail>({
     queryKey: ['board', id],
@@ -38,14 +41,15 @@ const BoardDetailPage: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
       <div className="bg-white p-8 rounded-2xl shadow-lg max-w-3xl w-full space-y-6">
-        <h2 className="text-3xl font-bold">{board.title}</h2>
+        <h2 className="text-3xl font-bold">제목: {board.title}</h2>
+        <p className="text-sm text-gray-600">작성자: {user?.name || ''}</p>
         <div className="text-sm text-gray-500">카테고리: {board.boardCategory}</div>
-        <div className="text-gray-800 whitespace-pre-line">{board.content}</div>
+        <div className="text-gray-800 whitespace-pre-line">내용: {board.content}</div>
 
         {board.imageUrl && (
           <div className="mt-6 flex justify-center">
             <img
-              src={`https://front-mission.bigs.or.kr${board.imageUrl}`} // 상대 경로 보정 필요할 경우
+              src={`https://front-mission.bigs.or.kr${board.imageUrl}`}
               alt="첨부 이미지"
               className="max-w-md max-h-80 object-contain rounded shadow"
             />
@@ -71,4 +75,4 @@ const BoardDetailPage: React.FC = () => {
   );
 };
 
-export default BoardDetailPage;
+export default BoardDetail;

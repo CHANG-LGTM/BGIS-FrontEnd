@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { BoardRequest, CategoryResponse } from '../types';
 
 interface BoardFormProps {
-  initialData: BoardRequest;
+  initialData?: BoardRequest;
   categories: CategoryResponse;
   onSubmit: (data: BoardRequest, file?: File | null) => void;
   initialImageUrl?: string | null;
+  removeImage?: boolean;
+  setRemoveImage?: (remove: boolean) => void;
   isEdit?: boolean;
-  onImageDelete?: () => void;
 }
 
 const BoardForm: React.FC<BoardFormProps> = ({
@@ -15,28 +16,33 @@ const BoardForm: React.FC<BoardFormProps> = ({
   categories,
   onSubmit,
   initialImageUrl = null,
+  setRemoveImage,
   isEdit = false,
-  onImageDelete,
 }) => {
-  const [title, setTitle] = useState(initialData.title);
-  const [content, setContent] = useState(initialData.content);
-  const [selectedCategory, setSelectedCategory] = useState(initialData.category);
+  const [title, setTitle] = useState(initialData?.title || '');
+  const [content, setContent] = useState(initialData?.content || '');
+  const [selectedCategory, setSelectedCategory] = useState(initialData?.category || '');
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(initialImageUrl);
-  const [isDeleted, setIsDeleted] = useState(false);
 
   useEffect(() => {
-    setTitle(initialData.title);
-    setContent(initialData.content);
-    setSelectedCategory(initialData.category);
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      setRemoveImage?.(false);
+    }
+  }, [file]);
+
+  useEffect(() => {
     setPreviewUrl(initialImageUrl);
-    setIsDeleted(false);
-  }, [initialData, initialImageUrl]);
+  }, [initialImageUrl]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0] || null;
     setFile(selectedFile);
-    setIsDeleted(false);
 
     if (selectedFile) {
       const reader = new FileReader();
@@ -44,16 +50,16 @@ const BoardForm: React.FC<BoardFormProps> = ({
         setPreviewUrl(reader.result as string);
       };
       reader.readAsDataURL(selectedFile);
+      setRemoveImage?.(false);
+    } else {
+      setPreviewUrl(initialImageUrl);
     }
   };
 
   const handleImageDelete = () => {
     setFile(null);
     setPreviewUrl(null);
-    setIsDeleted(true);
-    if (onImageDelete) {
-      onImageDelete();
-    }
+    setRemoveImage?.(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -62,14 +68,12 @@ const BoardForm: React.FC<BoardFormProps> = ({
       alert('제목, 내용, 카테고리를 모두 입력하세요.');
       return;
     }
-
-    // 사진을 삭제한 경우 file을 null로, 삭제 안 한 경우 file 그대로 넘김
-    onSubmit({ title, content, category: selectedCategory }, isDeleted ? null : file);
+    onSubmit({ title, content, category: selectedCategory }, file);
   };
 
   return (
     <form onSubmit={handleSubmit} className="max-w-md mx-auto p-4 bg-white shadow-md rounded">
-      <h2 className="text-2xl font-bold mb-4">{isEdit ? '게시글 수정' : '게시글 작성'}</h2>
+      <h2 className="text-2xl font-bold mb-4">{isEdit ? '게시글 수정' : '글 작성'}</h2>
 
       <div className="mb-4">
         <label className="block text-sm font-medium">제목</label>
@@ -129,7 +133,7 @@ const BoardForm: React.FC<BoardFormProps> = ({
         type="submit"
         className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
       >
-        {isEdit ? '수정 완료' : '등록'}
+        {isEdit ? '수정 완료' : '작성 완료'}
       </button>
     </form>
   );

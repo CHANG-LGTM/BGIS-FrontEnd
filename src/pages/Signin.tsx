@@ -8,22 +8,31 @@ import { useNavigate } from 'react-router-dom';
 const Signin: React.FC = () => {
   const navigate = useNavigate();
   const mutation = useMutation({
-    mutationFn: signin,
-    onSuccess: (data: AuthResponse) => {
-      localStorage.setItem('accessToken', data.accessToken);
-      localStorage.setItem('refreshToken', data.refreshToken);
-      // API에서 사용자 정보를 직접 반환하지 않으므로, JWT 디코딩 또는 별도 저장
+  mutationFn: signin,
+  onSuccess: (data: AuthResponse) => {
+    try {
       const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
-      localStorage.setItem('user', JSON.stringify({ username: payload.username, name: payload.name }));
-      navigate('/dashboard');
-    },
-    onError: (error) => {
-      alert(`로그인 실패: ${(error as Error).message}`);
-    },
-  });
+      console.log('payload:', payload);
 
-  const handleSubmit = async (data: SigninRequest | SigninRequest) => {
-    await mutation.mutateAsync(data as SigninRequest);
+      localStorage.setItem('user', JSON.stringify({
+        username: payload.username || '',
+        name: payload.name || ''
+      }));
+
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('JWT decode error:', error);
+      alert('로그인 후 사용자 정보 처리에 실패했습니다.');
+    }
+  },
+
+  onError: (error) => {
+    alert(`로그인 실패: ${(error as Error).message}`);
+  },
+});
+
+  const handleSubmit = async (data: SigninRequest) => {
+    await mutation.mutateAsync(data);
   };
 
   return (

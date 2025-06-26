@@ -7,6 +7,7 @@ export interface SignupRequest {
   }
   
   export interface SigninRequest {
+    accessToken: any;
     username: string;
     password: string;
   }
@@ -36,6 +37,7 @@ export interface AuthResponse {
   }
   
   export interface BoardDetail {
+    name: ReactNode;
     category: string;
     id: number;
     title: string;

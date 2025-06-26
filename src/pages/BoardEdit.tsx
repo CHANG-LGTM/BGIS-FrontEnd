@@ -11,7 +11,7 @@ const BoardEdit: React.FC = () => {
   const [initialData, setInitialData] = useState<BoardRequest | null>(null);
   const [originalData, setOriginalData] = useState<BoardRequest | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [isImageDeleted, setIsImageDeleted] = useState(false);
+  const [removeImage] = useState<boolean>(false);
 
   const { data: boardDetail } = useQuery<BoardDetail>({
     queryKey: ['board', id],
@@ -34,13 +34,12 @@ const BoardEdit: React.FC = () => {
       setInitialData(boardData);
       setOriginalData(boardData);
       setImageUrl(getFullImageUrl(boardDetail.imageUrl));
-      setIsImageDeleted(false);
     }
   }, [boardDetail]);
 
   const { mutate } = useMutation({
     mutationFn: ({ data, file }: { data: BoardRequest; file?: File | null }) => {
-      return updateBoard(Number(id), data, file);
+      return updateBoard(Number(id), data, removeImage ? null : file);
     },
     onSuccess: () => {
       alert('게시글이 수정되었습니다.');
@@ -58,7 +57,7 @@ const BoardEdit: React.FC = () => {
     const isTitleChanged = data.title !== originalData.title;
     const isContentChanged = data.content !== originalData.content;
     const isCategoryChanged = data.category !== originalData.category;
-    const isFileChanged = !!file || isImageDeleted;
+    const isFileChanged = !!file || removeImage;
 
     const hasChanges = isTitleChanged || isContentChanged || isCategoryChanged || isFileChanged;
 
@@ -69,8 +68,7 @@ const BoardEdit: React.FC = () => {
       return;
     }
 
-    // 사진 삭제 버튼을 누른 경우 file을 명시적으로 null로 전달
-    mutate({ data, file: isImageDeleted ? null : file });
+    mutate({ data, file });
   };
 
   if (!categories || !initialData) return <p>로딩 중...</p>;
@@ -82,8 +80,7 @@ const BoardEdit: React.FC = () => {
         categories={categories}
         onSubmit={handleSubmit}
         initialImageUrl={imageUrl}
-        isEdit
-        onImageDelete={() => setIsImageDeleted(true)}
+        isEdit={true}
       />
     </div>
   );

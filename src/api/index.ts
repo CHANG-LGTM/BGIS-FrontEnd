@@ -52,14 +52,13 @@ export const signin = async (data: SigninRequest): Promise<AuthResponse> => {
   } else {
     // 백엔드에서 user를 안 보내주는 경우 JWT 파싱 시도
     try {
-      const payload = JSON.parse(atob(accessToken.split('.')[1]));
-      localStorage.setItem(
-        'user',
-        JSON.stringify({
-          username: payload.sub || '',
-          name: payload.name || ''
-        })
-      );
+      const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
+
+localStorage.setItem('user', JSON.stringify({
+  username: encodeURIComponent(payload.username),
+  name: encodeURIComponent(payload.name)
+}));
+
     } catch (err) {
       console.error('JWT decode 실패:', err);
     }
@@ -105,25 +104,34 @@ export const createBoard = async (data: BoardRequest, file?: File): Promise<Boar
 };
 
 // 게시글 수정
-export const updateBoard = async (boardId: number, data: BoardRequest, file?: File | null): Promise<void> => {
+export const updateBoard = async (
+  boardId: number,
+  data: BoardRequest,
+  file?: File | null,
+  isImageDeleted = false
+): Promise<void> => {
   const { accessToken } = getToken();
   if (!accessToken) throw new Error('No access token available. Please sign in first.');
 
   const formData = new FormData();
   formData.append('request', new Blob([JSON.stringify(data)], { type: 'application/json' }));
-  if (file) formData.append('file', file);
+  if (file) {
+    formData.append('file', file);
+  }
+  if (isImageDeleted) {
+    formData.append('deleteImage', 'true');
+  }
 
   const response = await api.patch(`/boards/${boardId}`, formData, {
     headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
+      Authorization: `Bearer ${accessToken}`,
+    },
   });
 
   if (response.status < 200 || response.status >= 300) {
     throw new Error(`Failed to update board: ${response.statusText}`);
   }
 };
-
 // 게시글 삭제
 export const deleteBoard = async (id: number): Promise<void> => {
   const { accessToken } = getToken();
@@ -154,7 +162,7 @@ export const getBoardDetail = async (id: number): Promise<BoardDetail> => {
 export const getBoard = getBoardDetail;
 
 // 게시글 목록 조회
-export const getBoards = async (page: number, size: number): Promise<BoardListResponse> => {
+export const getBoards = async (page: number, size: number, search: string, categoryFilter: string): Promise<BoardListResponse> => {
   const { accessToken } = getToken();
   if (!accessToken) throw new Error('No access token available. Please sign in first.');
 

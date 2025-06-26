@@ -8,10 +8,9 @@ interface BoardListProps {
   page: number;
   size: number;
   setPage: (page: number) => void;
-  boards?: BoardListResponse['content']; // 선택적 prop 추가
 }
 
-const BoardList: React.FC<BoardListProps> = ({ page, size, setPage, boards }) => {
+const BoardList: React.FC<BoardListProps> = ({ page, size, setPage }) => {
   const navigate = useNavigate();
   const { data, isLoading, error } = useQuery<BoardListResponse>({
     queryKey: ['boards', page, size],
@@ -21,13 +20,11 @@ const BoardList: React.FC<BoardListProps> = ({ page, size, setPage, boards }) =>
   if (isLoading) return <div className="text-center">로딩 중...</div>;
   if (error) return <div className="text-center text-red-500">오류: {(error as Error).message}</div>;
 
-  const boardData = boards || data?.content;
-
-  return (  
+  return (
     <div className="max-w-4xl mx-auto p-4">
       <h2 className="text-2xl font-bold mb-4">게시글 목록</h2>
       <div className="grid gap-4">
-        {boardData?.map((board) => (
+        {data?.content.map((board) => (
           <div
             key={board.id}
             className="p-4 bg-white shadow-md rounded cursor-pointer hover:bg-gray-100"
@@ -37,7 +34,7 @@ const BoardList: React.FC<BoardListProps> = ({ page, size, setPage, boards }) =>
             <p className="text-sm text-gray-600">{board.category}</p>
             <p className="text-sm text-gray-500">{new Date(board.createdAt).toLocaleDateString()}</p>
           </div>
-        )) || <div>데이터가 없습니다.</div>}
+        ))}
       </div>
       <div className="flex justify-center mt-4">
         <button
