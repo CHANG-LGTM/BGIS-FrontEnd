@@ -1,8 +1,5 @@
 # 이창현 BIGS 프론트엔드 개발자 채용 과제
 
-<p align="center">
-  <img src="https://via.placeholder.com/150" alt="BIGS Logo" />
-</p>
 
 이 프로젝트는 **BIGS 프론트엔드 개발자 채용 과제**를 위해 제작된 **React** 기반 웹 게시판 애플리케이션입니다. **Vite**를 빌드 도구로 사용하며, **Tailwind CSS**로 반응형 UI를 구현했습니다.
 
