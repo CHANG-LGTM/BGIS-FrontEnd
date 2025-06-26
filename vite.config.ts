@@ -5,11 +5,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/auth': {
+      '/api': {
         target: 'https://front-mission.bigs.or.kr',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/auth/, '/auth'),
-        secure:false,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
   },

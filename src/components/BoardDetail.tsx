@@ -1,59 +1,74 @@
 import React from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getBoard, deleteBoard } from '../api';
+import { useNavigate, useParams } from 'react-router-dom';
+import { deleteBoard, getBoard } from '../api';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import type { BoardDetail } from '../types';
-import { useNavigate } from 'react-router-dom';
 
-interface BoardDetailProps {
-  id: number;
-}
-
-const BoardDetail: React.FC<BoardDetailProps> = ({ id }) => {
+const BoardDetailPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { data, isLoading, error } = useQuery<BoardDetail>({
+
+  const { data: board, isLoading, error } = useQuery<BoardDetail>({
     queryKey: ['board', id],
-    queryFn: () => getBoard(id),
+    queryFn: () => getBoard(Number(id)),
+    enabled: !!id,
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: () => deleteBoard(id),
+  const { mutate } = useMutation({
+    mutationFn: () => deleteBoard(Number(id)),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['boards'] });
+      alert('게시글이 삭제되었습니다.');
       navigate('/dashboard');
+    },
+    onError: (error) => {
+      console.error('게시글 삭제 실패:', error);
+      alert('게시글 삭제에 실패했습니다.');
     },
   });
 
-  if (isLoading) return <div className="text-center">로딩 중...</div>;
-  if (error) return <div className="text-center text-red-500">오류: {(error as Error).message}</div>;
+  const handleDelete = () => {
+    if (window.confirm('정말 삭제하시겠습니까?')) {
+      mutate();
+    }
+  };
+
+  if (isLoading) return <p>로딩 중...</p>;
+  if (error || !board) return <p>게시글을 불러오는 데 실패했습니다.</p>;
 
   return (
-    <div className="max-w-4xl mx-auto p-4 bg-white shadow-md rounded">
-      <h2 className="text-2xl font-bold mb-4">{data?.title}</h2>
-      <p className="text-sm text-gray-600 mb-2">카테고리: {data?.boardCategory}</p>
-      <p className="text-sm text-gray-500 mb-4">
-        작성일: {new Date(data?.createdAt || '').toLocaleDateString()}
-      </p>
-      <p className="mb-4">{data?.content}</p>
-      {data?.imageUrl && (
-        <img src={`API_BASE_URL${data.imageUrl}`} alt="게시글 이미지" className="max-w-full h-auto mb-4" />
-      )}
-      <div className="flex gap-2">
-        <button
-          onClick={() => navigate(`/boards/edit/${id}`)}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          수정
-        </button>
-        <button
-          onClick={() => deleteMutation.mutate()}
-          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-        >
-          삭제
-        </button>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+      <div className="bg-white p-8 rounded-2xl shadow-lg max-w-3xl w-full space-y-6">
+        <h2 className="text-3xl font-bold">{board.title}</h2>
+        <div className="text-sm text-gray-500">카테고리: {board.boardCategory}</div>
+        <div className="text-gray-800 whitespace-pre-line">{board.content}</div>
+
+        {board.imageUrl && (
+          <div className="mt-6 flex justify-center">
+            <img
+              src={`https://front-mission.bigs.or.kr${board.imageUrl}`} // 상대 경로 보정 필요할 경우
+              alt="첨부 이미지"
+              className="max-w-md max-h-80 object-contain rounded shadow"
+            />
+          </div>
+        )}
+
+        <div className="flex justify-end gap-4 mt-8">
+          <button
+            className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 min-w-[120px]"
+            onClick={() => navigate(`/boards/edit/${board.id}`)}
+          >
+            수정
+          </button>
+          <button
+            className="px-6 py-2 bg-red-500 text-white rounded hover:bg-red-600 min-w-[120px]"
+            onClick={handleDelete}
+          >
+            삭제
+          </button>
+        </div>
       </div>
     </div>
   );
 };
 
-export default BoardDetail;
+export default BoardDetailPage;

@@ -1,3 +1,4 @@
+
 export interface SignupRequest {
     username: string;
     name: string;
@@ -10,10 +11,15 @@ export interface SignupRequest {
     password: string;
   }
   
-  export interface AuthResponse {
-    accessToken: string;
-    refreshToken: string;
-  }
+export interface AuthResponse {
+  user: {
+    username: string;
+    name: string;
+  };
+  accessToken: string;
+  refreshToken: string;
+}
+
   
   export interface RefreshRequest {
     refreshToken: string;
@@ -30,6 +36,7 @@ export interface SignupRequest {
   }
   
   export interface BoardDetail {
+    category: string;
     id: number;
     title: string;
     content: string;

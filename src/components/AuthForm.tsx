@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import type { SignupRequest, SigninRequest } from '../types';
 
 // 유효성 검사 함수
-const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const validateusername = (username: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(username);
 const validateSignupPassword = (password: string) =>
   /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!%*#?&])[A-Za-z\d!@%*#?&]{8,}$/.test(password);
 
@@ -26,7 +26,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
   const validateForm = (): boolean => {
     const errors: { [key: string]: string } = {};
 
-    if (!formData.username || !validateEmail(formData.username)) {
+    if (!formData.username || !validateusername(formData.username)) {
       errors.username = '유효한 이메일 형식이어야 합니다.';
     }
 
@@ -89,7 +89,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
       <div className="mb-4">
         <label className="block text-sm font-medium">이메일</label>
         <input
-          type="email"
+          type="username"
           value={formData.username}
           onChange={(e) => setFormData({ ...formData, username: e.target.value })}
           className={`w-full p-2 border rounded ${formErrors.username ? 'border-red-500' : ''}`}
