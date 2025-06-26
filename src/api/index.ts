@@ -25,33 +25,43 @@ const getToken = () => ({
   refreshToken: localStorage.getItem('refreshToken') || '',
 });
 
-const BASE_URL = '/api';
+const BASE_URL = 'https://front-mission.bigs.or.kr';
+const AUTH_URL = 'https://front-mission.bigs.or.kr';
 
+// Axios 인스턴스
 export const api = axios.create({
   baseURL: BASE_URL,
 });
 
 // 회원가입
 export const signup = async (data: SignupRequest): Promise<void> => {
-  await api.post('/auth/signup', data, {
+  await fetch(`${AUTH_URL}/auth/signup`, {
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
   });
 };
 
 // 로그인
 export const signin = async (data: SigninRequest): Promise<AuthResponse> => {
-  const response = await api.post('/auth/signin', data, {
+  const response = await fetch(`${AUTH_URL}/auth/signin`, {
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
   });
 
-  const { accessToken, refreshToken, user } = response.data;
+  if (!response.ok) {
+    throw new Error(`로그인 실패: ${response.status}`);
+  }
+
+  const result = await response.json();
+  const { accessToken, refreshToken, user } = result;
+
   saveToken(accessToken, refreshToken);
 
-  // user 정보 저장
   if (user) {
     localStorage.setItem('user', JSON.stringify(user));
   } else {
-    // 백엔드에서 user를 안 보내주는 경우 JWT 파싱 시도
     try {
       const base64Url = accessToken.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -76,7 +86,7 @@ export const signin = async (data: SigninRequest): Promise<AuthResponse> => {
     }
   }
 
-  return response.data;
+  return result;
 };
 
 // 토큰 갱신
@@ -84,17 +94,22 @@ export const refreshToken = async (): Promise<AuthResponse> => {
   const { refreshToken } = getToken();
   if (!refreshToken) throw new Error('No refresh token available. Please sign in first.');
 
-  const response = await api.post('/auth/refresh', {}, {
+  const response = await fetch(`${AUTH_URL}/auth/refresh`, {
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${refreshToken}`,
     },
   });
 
-  const { accessToken, refreshToken: newRefreshToken } = response.data;
-  saveToken(accessToken, newRefreshToken);
+  if (!response.ok) {
+    throw new Error(`리프레쉬 토큰 갱신 실패: ${response.status}`);
+  }
 
-  return response.data;
+  const result = await response.json();
+  saveToken(result.accessToken, result.refreshToken);
+
+  return result;
 };
 
 // 게시글 생성
@@ -108,8 +123,8 @@ export const createBoard = async (data: BoardRequest, file?: File): Promise<Boar
 
   const response = await api.post('/boards', formData, {
     headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
+      Authorization: `Bearer ${accessToken}`,
+    },
   });
 
   return response.data;
@@ -127,22 +142,14 @@ export const updateBoard = async (
 
   const formData = new FormData();
   formData.append('request', new Blob([JSON.stringify(data)], { type: 'application/json' }));
-  if (file) {
-    formData.append('file', file);
-  }
-  if (isImageDeleted) {
-    formData.append('deleteImage', 'true');
-  }
+  if (file) formData.append('file', file);
+  if (isImageDeleted) formData.append('deleteImage', 'true');
 
-  const response = await api.patch(`/boards/${boardId}`, formData, {
+  await api.patch(`/boards/${boardId}`, formData, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
   });
-
-  if (response.status < 200 || response.status >= 300) {
-    throw new Error(`Failed to update board: ${response.statusText}`);
-  }
 };
 
 // 게시글 삭제
@@ -152,8 +159,8 @@ export const deleteBoard = async (id: number): Promise<void> => {
 
   await api.delete(`/boards/${id}`, {
     headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
+      Authorization: `Bearer ${accessToken}`,
+    },
   });
 };
 
@@ -164,8 +171,8 @@ export const getBoardDetail = async (id: number): Promise<BoardDetail> => {
 
   const response = await api.get(`/boards/${id}`, {
     headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
+      Authorization: `Bearer ${accessToken}`,
+    },
   });
 
   return response.data;
@@ -175,14 +182,16 @@ export const getBoardDetail = async (id: number): Promise<BoardDetail> => {
 export const getBoard = getBoardDetail;
 
 // 게시글 목록 조회
-export const getBoards = async (page: number, size: number, search: string, categoryFilter: string): Promise<BoardListResponse> => {
+export const getBoards = async (page: number, size: number, search = '', categoryFilter = ''): Promise<BoardListResponse> => {
   const { accessToken } = getToken();
   if (!accessToken) throw new Error('No access token available. Please sign in first.');
 
-  const response = await api.get(`/boards?page=${page}&size=${size}`, {
+  const url = `/boards?page=${page}&size=${size}&search=${search}&category=${categoryFilter}`;
+
+  const response = await api.get(url, {
     headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
+      Authorization: `Bearer ${accessToken}`,
+    },
   });
 
   return response.data;
@@ -195,8 +204,8 @@ export const getCategories = async (): Promise<CategoryResponse> => {
 
   const response = await api.get('/boards/categories', {
     headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
+      Authorization: `Bearer ${accessToken}`,
+    },
   });
 
   return response.data;
@@ -207,27 +216,3 @@ export const getFullImageUrl = (imageUrl: string | null | undefined) => {
   if (!imageUrl) return null;
   return imageUrl.startsWith('http') ? imageUrl : `https://front-mission.bigs.or.kr${imageUrl}`;
 };
-
-// ===================== 자동 리프레쉬 토큰 갱신 Interceptor =====================
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      try {
-        const newTokens = await refreshToken();
-        api.defaults.headers.common['Authorization'] = `Bearer ${newTokens.accessToken}`;
-        originalRequest.headers['Authorization'] = `Bearer ${newTokens.accessToken}`;
-        return api(originalRequest);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (refreshError) {
-        console.error('리프레쉬 토큰도 만료되었습니다. 로그인 필요.');
-        localStorage.clear();
-        window.location.href = '/signin';
-      }
-    }
-    return Promise.reject(error);
-  }
-);
