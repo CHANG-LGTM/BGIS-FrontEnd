@@ -20,7 +20,7 @@ const Signin: React.FC = () => {
             .join('')
         );
         const payload = JSON.parse(jsonPayload);
-        console.log('payload:', payload);
+        
 
         localStorage.setItem(
           'user',
@@ -31,8 +31,9 @@ const Signin: React.FC = () => {
         );
 
         navigate('/dashboard');
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
-        console.error('JWT decode error:', error);
+        
         alert('로그인 후 사용자 정보 처리에 실패했습니다.');
       }
     },

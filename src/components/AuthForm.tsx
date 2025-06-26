@@ -1,4 +1,4 @@
-import React, { type FormEvent, useState } from 'react';
+import React, { type FormEvent, useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import type { SignupRequest, SigninRequest } from '../types';
@@ -22,6 +22,12 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
+
+  const usernameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    usernameInputRef.current?.focus();
+  }, []);
 
   const validateForm = (): boolean => {
     const errors: { [key: string]: string } = {};
@@ -60,10 +66,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
     setLoading(true);
 
     if (onSubmit) {
-      console.log('Calling onSubmit with data:', formData);
       try {
         await onSubmit(formData);
-        console.log('onSubmit completed');
       } catch (error) {
         console.error('onSubmit Error:', error);
         if (axios.isAxiosError(error)) {
@@ -89,6 +93,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
       <div className="mb-4">
         <label className="block text-sm font-medium">이메일</label>
         <input
+          ref={usernameInputRef}
           type="username"
           value={formData.username}
           onChange={(e) => setFormData({ ...formData, username: e.target.value })}

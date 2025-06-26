@@ -7,18 +7,19 @@ import { useNavigate } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
   const [page, setPage] = useState(0);
+  const [categoryFilter, setCategoryFilter] = useState('');
   const size = 10;
   const navigate = useNavigate();
 
   const rawUserData = localStorage.getItem('user');
-  console.log('Raw localStorage user:', rawUserData);
+
 
   const user: User | null = rawUserData ? JSON.parse(rawUserData) : null;
-  console.log('Parsed user:', user);
+  
 
-  const { data: boardsData, isLoading } = useQuery<BoardListResponse>({
-    queryKey: ['boards', page, size],
-    queryFn: () => getBoards(page, size),
+  useQuery<BoardListResponse>({
+    queryKey: ['boards', page, size, categoryFilter],
+    queryFn: () => getBoards(page, size, '', categoryFilter),
   });
 
   const handleLogout = () => {
@@ -58,11 +59,14 @@ const Dashboard: React.FC = () => {
             </button>
           </div>
         </div>
-        {isLoading ? (
-          <div className="text-center">게시물 로딩 중...</div>
-        ) : (
-          <BoardList page={page} size={size} setPage={setPage} boards={boardsData?.content || []} />
-        )}
+
+        <BoardList
+          page={page}
+          size={size}
+          setPage={setPage}
+          categoryFilter={categoryFilter}
+          setCategoryFilter={setCategoryFilter}
+        />
       </div>
     </div>
   );

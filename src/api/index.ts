@@ -221,6 +221,7 @@ api.interceptors.response.use(
         api.defaults.headers.common['Authorization'] = `Bearer ${newTokens.accessToken}`;
         originalRequest.headers['Authorization'] = `Bearer ${newTokens.accessToken}`;
         return api(originalRequest);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (refreshError) {
         console.error('리프레쉬 토큰도 만료되었습니다. 로그인 필요.');
         localStorage.clear();

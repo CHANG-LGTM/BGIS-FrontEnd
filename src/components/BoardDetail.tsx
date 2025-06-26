@@ -23,8 +23,7 @@ const BoardDetail: React.FC = () => {
       alert('게시글이 삭제되었습니다.');
       navigate('/dashboard');
     },
-    onError: (error) => {
-      console.error('게시글 삭제 실패:', error);
+    onError: () => {
       alert('게시글 삭제에 실패했습니다.');
     },
   });
@@ -40,11 +39,23 @@ const BoardDetail: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <div className="bg-white p-8 rounded-2xl shadow-lg max-w-3xl w-full space-y-6">
-        <h2 className="text-3xl font-bold">제목: {board.title}</h2>
-        <p className="text-sm text-gray-600">작성자: {user?.name || ''}</p>
-        <div className="text-sm text-gray-500">카테고리: {board.boardCategory}</div>
-        <div className="text-gray-800 whitespace-pre-line">내용: {board.content}</div>
+      <div className="bg-white p-8 rounded-2xl shadow-lg max-w-3xl w-full space-y-6 border border-gray-200">
+        
+        <h2 className="text-3xl font-bold mb-4 border-b pb-2">제목: {board.title}</h2>
+
+        <div className="space-y-2 border-b pb-4">
+          <div className="flex justify-between items-center">
+            <p className="text-gray-700 font-semibold">작성자 : <span className="text-gray-800">{user?.name || ''}</span></p>
+            <p className="text-gray-700 font-semibold">카테고리 : <span className="text-gray-800">{board.boardCategory}</span></p>
+          </div>
+        </div>
+
+        <div className="space-y-2 border-b pb-4">
+          <p className="font-semibold text-gray-700">내용</p>
+          <div className="text-gray-800 whitespace-pre-line bg-gray-50 p-4 rounded border">
+            {board.content}
+          </div>
+        </div>
 
         {board.imageUrl && (
           <div className="mt-6 flex justify-center">
@@ -56,7 +67,7 @@ const BoardDetail: React.FC = () => {
           </div>
         )}
 
-        <div className="flex justify-end gap-4 mt-8">
+        <div className="flex justify-center gap-8 mt-8 border-t pt-4">
           <button
             className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 min-w-[120px]"
             onClick={() => navigate(`/boards/edit/${board.id}`)}
