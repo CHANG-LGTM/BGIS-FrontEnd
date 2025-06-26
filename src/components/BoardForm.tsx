@@ -116,15 +116,7 @@ const BoardForm: React.FC<BoardFormProps> = ({
         {previewUrl && (
           <div className="flex flex-col items-center mt-2 space-y-2">
             <img src={previewUrl} alt="미리보기" className="max-h-40 object-contain" />
-            {isEdit && (
-              <button
-                type="button"
-                onClick={handleImageDelete}
-                className="text-sm text-red-500 hover:underline"
-              >
-                사진 삭제
-              </button>
-            )}
+           
           </div>
         )}
       </div>

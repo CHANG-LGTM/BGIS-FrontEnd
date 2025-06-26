@@ -9,19 +9,24 @@ const Dashboard: React.FC = () => {
   const [page, setPage] = useState(0);
   const size = 10;
   const navigate = useNavigate();
+
   const rawUserData = localStorage.getItem('user');
   console.log('Raw localStorage user:', rawUserData);
-  const user: User | null = rawUserData
-    ? JSON.parse(rawUserData, (key, value) =>
-        typeof value === 'string' ? decodeURIComponent(escape(value)) : value
-      )
-    : null;
-  console.log('Parsed user with decode:', user);
+
+  const user: User | null = rawUserData ? JSON.parse(rawUserData) : null;
+  console.log('Parsed user:', user);
 
   const { data: boardsData, isLoading } = useQuery<BoardListResponse>({
     queryKey: ['boards', page, size],
     queryFn: () => getBoards(page, size),
   });
+
+  const handleLogout = () => {
+    if (window.confirm('로그아웃 하시겠습니까?')) {
+      localStorage.clear();
+      navigate('/signin');
+    }
+  };
 
   if (!user) {
     navigate('/signin');
@@ -46,10 +51,7 @@ const Dashboard: React.FC = () => {
               글쓰기
             </button>
             <button
-              onClick={() => {
-                localStorage.clear();
-                navigate('/signin');
-              }}
+              onClick={handleLogout}
               className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
             >
               로그아웃

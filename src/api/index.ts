@@ -7,7 +7,8 @@ import type {
   BoardResponse,
   BoardDetail,
   BoardListResponse,
-  CategoryResponse} from '../types';
+  CategoryResponse,
+} from '../types';
 
 // 토큰 저장 및 갱신 함수
 const saveToken = (accessToken: string, refreshToken?: string) => {
@@ -21,26 +22,26 @@ const saveToken = (accessToken: string, refreshToken?: string) => {
 
 const getToken = () => ({
   accessToken: localStorage.getItem('accessToken') || '',
-  refreshToken: localStorage.getItem('refreshToken') || ''
+  refreshToken: localStorage.getItem('refreshToken') || '',
 });
 
 const BASE_URL = '/api';
 
 export const api = axios.create({
-  baseURL: BASE_URL
+  baseURL: BASE_URL,
 });
 
 // 회원가입
 export const signup = async (data: SignupRequest): Promise<void> => {
   await api.post('/auth/signup', data, {
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
   });
 };
 
 // 로그인
 export const signin = async (data: SigninRequest): Promise<AuthResponse> => {
   const response = await api.post('/auth/signin', data, {
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
   });
 
   const { accessToken, refreshToken, user } = response.data;
@@ -52,13 +53,24 @@ export const signin = async (data: SigninRequest): Promise<AuthResponse> => {
   } else {
     // 백엔드에서 user를 안 보내주는 경우 JWT 파싱 시도
     try {
-      const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
+      const base64Url = accessToken.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => `%${('00' + c.charCodeAt(0).toString(16)).slice(-2)}`)
+          .join('')
+      );
 
-localStorage.setItem('user', JSON.stringify({
-  username: encodeURIComponent(payload.username),
-  name: encodeURIComponent(payload.name)
-}));
+      const payload = JSON.parse(jsonPayload);
 
+      localStorage.setItem(
+        'user',
+        JSON.stringify({
+          username: payload.username,
+          name: payload.name,
+        })
+      );
     } catch (err) {
       console.error('JWT decode 실패:', err);
     }
@@ -75,8 +87,8 @@ export const refreshToken = async (): Promise<AuthResponse> => {
   const response = await api.post('/auth/refresh', {}, {
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${refreshToken}`
-    }
+      Authorization: `Bearer ${refreshToken}`,
+    },
   });
 
   const { accessToken, refreshToken: newRefreshToken } = response.data;
@@ -132,6 +144,7 @@ export const updateBoard = async (
     throw new Error(`Failed to update board: ${response.statusText}`);
   }
 };
+
 // 게시글 삭제
 export const deleteBoard = async (id: number): Promise<void> => {
   const { accessToken } = getToken();
@@ -194,3 +207,26 @@ export const getFullImageUrl = (imageUrl: string | null | undefined) => {
   if (!imageUrl) return null;
   return imageUrl.startsWith('http') ? imageUrl : `https://front-mission.bigs.or.kr${imageUrl}`;
 };
+
+// ===================== 자동 리프레쉬 토큰 갱신 Interceptor =====================
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      try {
+        const newTokens = await refreshToken();
+        api.defaults.headers.common['Authorization'] = `Bearer ${newTokens.accessToken}`;
+        originalRequest.headers['Authorization'] = `Bearer ${newTokens.accessToken}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        console.error('리프레쉬 토큰도 만료되었습니다. 로그인 필요.');
+        localStorage.clear();
+        window.location.href = '/signin';
+      }
+    }
+    return Promise.reject(error);
+  }
+);

@@ -8,28 +8,39 @@ import { useNavigate } from 'react-router-dom';
 const Signin: React.FC = () => {
   const navigate = useNavigate();
   const mutation = useMutation({
-  mutationFn: signin,
-  onSuccess: (data: AuthResponse) => {
-    try {
-      const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
-      console.log('payload:', payload);
+    mutationFn: signin,
+    onSuccess: (data: AuthResponse) => {
+      try {
+        const base64Url = data.accessToken.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+          atob(base64)
+            .split('')
+            .map((c) => `%${('00' + c.charCodeAt(0).toString(16)).slice(-2)}`)
+            .join('')
+        );
+        const payload = JSON.parse(jsonPayload);
+        console.log('payload:', payload);
 
-      localStorage.setItem('user', JSON.stringify({
-        username: payload.username || '',
-        name: payload.name || ''
-      }));
+        localStorage.setItem(
+          'user',
+          JSON.stringify({
+            username: payload.username || '',
+            name: payload.name || '',
+          })
+        );
 
-      navigate('/dashboard');
-    } catch (error) {
-      console.error('JWT decode error:', error);
-      alert('로그인 후 사용자 정보 처리에 실패했습니다.');
-    }
-  },
+        navigate('/dashboard');
+      } catch (error) {
+        console.error('JWT decode error:', error);
+        alert('로그인 후 사용자 정보 처리에 실패했습니다.');
+      }
+    },
 
-  onError: (error) => {
-    alert(`로그인 실패: ${(error as Error).message}`);
-  },
-});
+    onError: (error) => {
+      alert(`로그인 실패: ${(error as Error).message}`);
+    },
+  });
 
   const handleSubmit = async (data: SigninRequest) => {
     await mutation.mutateAsync(data);
