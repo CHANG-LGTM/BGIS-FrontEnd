@@ -1,55 +1,9 @@
-# React + TypeScript + Vite
+### 의존성
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+프로젝트는 다음 라이브러리를 사용합니다. `npm install`로 모든 의존성을 설치할 수 있습니다:
 
-Currently, two official plugins are available:
+- **tailwindcss**: UI 스타일링을 위한 유틸리티 기반 CSS 프레임워크.
+- **@tailwindcss/forms**: 폼 스타일링 최적화 플러그인.
+- **postcss** 및 **autoprefixer**: Tailwind CSS 빌드 프로세스 지원.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
-# BGIS-FrontEnd
+Tailwind CSS는 `tailwind.config.js`, `postcss.config.js`, `src/index.css`에 설정되어 있습니다. 별도의 추가 설정 없이 `npm run dev`로 바로 사용 가능합니다.
